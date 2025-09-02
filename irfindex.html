@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <title>Incident Report Registration</title>
+    <style>
+
+  .form-container {
+    position: relative;
+    max-width: 800px;
+    margin: auto;
+    background-color: rgb(231, 236, 241);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    z-index: 10;
+  }
+
+  h2 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .form-grid-full {
+    grid-column: 1 / 3;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 5px;
+  }
+
+  input, textarea {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+  }
+
+  input, textarea {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+  }
+
+  .button-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+  }
+
+  .button-group {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+
+  button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    border: none;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  button:hover {
+    background-color: #0056b3;
+  }
+
+  .message {
+    margin-top: 25px;
+    font-weight: bold;
+    text-align: center;
+    color: #333;
+  }
+
+  @media (max-width: 600px) {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .modal {
+  display: none;
+  position: fixed;
+  z-index: 999;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+  background-color: #fff;
+  margin: 15% auto;
+  padding: 20px 30px;
+  border-radius: 8px;
+  width: 300px;
+  text-align: center;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.modal-buttons button {
+  margin: 10px;
+  padding: 8px 16px;
+  border: none;
+  background-color: #3a7bd5;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.modal-buttons button:hover {
+  background-color: #285b9a;
+}
+
+</style>
+
+  </head>
+  <body onload="generateIncidentReportNo()">
+    <div class="form-container">
+      <div style="text-align: center; margin-bottom: 10px; margin-top: 5px;">
+        <img src="ISMD Logo.png" alt="ISMD Logo" style="height: 130px;">
+      </div>
+  <h1 style="text-align: center;">Information Systems Management Division</h1>
+    <div class="form-container">
+  <h2>Incident Report Registration</h2>
+
+    <div style="margin-bottom: 25px; text-align: center;">
+      <label for="searchIRN"><strong>Search Incident Report No. (IRN):</strong></label>
+      <input type="text" id="searchIRN" style="width: 220px; margin-right: 10px;">
+      <button type="button" onclick="searchRecord()">Search</button>
+    </div>
+
+  <div class="form-grid">
+    <div>
+      <label for="irepNo">Incident Report No.</label>
+      <input type="text" id="irepNo" required>
+    </div>
+    <div>
+      <label for="officeOrigin">Office of Origin</label>
+      <input type="text" id="officeOrigin">
+    </div>
+
+    <div>
+      <label for="reportedBy">Reported By</label>
+      <input type="text" id="reportedBy">
+    </div>
+    <div>
+      <label for="dateRepTrans">Date Reported</label>
+      <input type="date" id="dateRepTrans">
+    </div>
+
+    <div class="form-grid-full">
+      <label for="issue">Issue/Concern</label>
+      <textarea id="issue" rows="3"></textarea>
+    </div>
+
+    <div class="form-grid-full">
+      <label for="actions">Action Taken/Remarks</label>
+      <textarea id="actions" rows="3"></textarea>
+    </div>
+
+    <div>
+      <label for="attendedBy">Attended by (Name of Technical Support)</label>
+      <input type="text" id="attendedBy">
+    </div>
+    <div>
+      <label for="receivedBy">Received/Acknowledged by (Users)</label>
+      <input type="text" id="receivedBy">
+    </div>
+  </div>
+
+  <div class="button-container">
+  <div class="button-group">
+    <button type="button" onclick="confirmSubmit()">Submit</button>
+    <button type="button" onclick="modifyRecord()">Modify</button>
+    <button type="button" onclick="clearFields()">Clear</button>
+  </div>
+</div>
+
+  <div id="message" class="message"></div>
+</div>
+
+    <!-- Confirmation Modal -->
+<div id="confirmModal" class="modal">
+  <div class="modal-content">
+    <p>Do you want to save the record?</p>
+    <div class="modal-buttons">
+      <button onclick="proceedSubmit()">Yes</button>
+      <button onclick="closeModal()">No</button>
+    </div>
+  </div>
+</div>
+
+    <script>
+      function generateIncidentReportNo() {
+  // Example: IRN-YYYYMMDD-HHMMSS
+        const now = new Date();
+        const pad = n => n.toString().padStart(2, '0');
+        const reportNo = `IRN-${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+        document.getElementById('irepNo').value = reportNo;
+}
+
+      function getreportData() {
+        return {
+        irepNo: document.getElementById('irepNo').value.trim(),
+        officeOrigin: document.getElementById('officeOrigin').value.trim(),
+        reportedBy: document.getElementById('reportedBy').value.trim(),
+        dateRepTrans: document.getElementById('dateRepTrans').value.trim(),
+        issue: document.getElementById('issue').value.trim(),
+        actions: document.getElementById('actions').value.trim(), // add this line
+        attendedBy: document.getElementById('attendedBy').value.trim(),
+        receivedBy: document.getElementById('receivedBy').value.trim()
+      };
+    }
+
+      function submitRecord() {
+        const data = getreportData();
+        google.script.run.withSuccessHandler(msg => {
+          document.getElementById('message').innerText = msg;
+          clearFields();
+        }).withFailureHandler(err => {
+          document.getElementById('message').innerText = err.message;
+        }).submitData(data);
+      }
+
+      function searchRecord() {
+        const irepNo = document.getElementById('searchIRN').value.trim();
+        if (!irepNo) {
+          document.getElementById('message').innerText = "Enter Incident Report No. to search.";
+          return;
+        }
+        google.script.run.withSuccessHandler(result => {
+          if (result.found) {
+            const r = result.record;
+            document.getElementById('irepNo').value = r.irepNo;
+            document.getElementById('officeOrigin').value = r.officeOrigin;
+            document.getElementById('reportedBy').value = r.reportedBy;
+            document.getElementById('dateRepTrans').value = r.dateRepTrans;
+            document.getElementById('issue').value = r.issue;
+            document.getElementById('actions').value = r.actions;
+            document.getElementById('attendedBy').value = r.attendedBy;
+            document.getElementById('receivedBy').value = r.receivedBy;
+            document.getElementById('message').innerText = "Record found.";
+          } else {
+            document.getElementById('message').innerText = "No record found.";
+            clearFields(false);
+          }
+        }).searchRecord(irepNo);
+      }
+
+      function modifyRecord() {
+        const data = getreportData();
+        google.script.run.withSuccessHandler(msg => {
+          document.getElementById('message').innerText = msg;
+          clearFields();
+        }).withFailureHandler(err => {
+          document.getElementById('message').innerText = err.message;
+        }).modifyRecord(data);
+      }
+
+      function clearFields(clearIrepNo = true) {
+        if (clearIrepNo) generateIncidentReportNo();
+        document.getElementById('officeOrigin').value = '';
+        document.getElementById('reportedBy').value = '';
+        document.getElementById('dateRepTrans').value = '';
+        document.getElementById('issue').value = '';
+        document.getElementById('actions').value = '';
+        document.getElementById('attendedBy').value = '';
+        document.getElementById('receivedBy').value = '';
+        document.getElementById('message').innerText = '';
+      }
+
+    let formDataToSubmit = null;
+
+    function confirmSubmit() {
+      formDataToSubmit = getreportData();
+      if (!formDataToSubmit) return;
+      document.getElementById("confirmModal").style.display = "block";
+  }
+
+    function closeModal() {
+      document.getElementById("confirmModal").style.display = "none";
+      document.getElementById("issue").focus(); // return to last textarea
+      document.getElementById("actions").focus(); // return to last textarea
+  }
+
+function proceedSubmit() {
+  document.getElementById("confirmModal").style.display = "none";
+
+  google.script.run
+    .withSuccessHandler(function (msg) {
+      alert(msg);
+      clearFields(); // corrected from clearFormFields
+    })
+    .withFailureHandler(function (err) {
+      alert("Error: " + err.message);
+    })
+    .submitData(formDataToSubmit);
+}
+
+    </script>
+  </body>
+</html>

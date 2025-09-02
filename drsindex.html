@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <title>ISMD Document Registration Sheet</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    .main-header {
+      display: flex;
+      align-items: center;
+      background: #01162e;
+      color: #fff;
+      padding: 10px 5px;
+      gap: 30px;
+      margin-bottom: 20px;
+    }
+
+    .logo-container {
+      margin-right: 20px;
+    }
+
+    .logo-container img {
+      height: 150px;
+      width: auto;
+      animation: logoPulse 1s infinite alternate;
+    }
+
+    h2 {
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      box-sizing: border-box;
+    }
+    button {
+      width: 22%;
+      margin-top: 10px;
+      cursor: pointer;
+      display: inline-block;
+      margin-right: 10px;
+    }
+    #message {
+      margin-top: 15px;
+      font-weight: bold;
+      color: darkred;
+    }
+  </style>
+
+  <script src="Code.gs"></script>
+  <script>
+    function clearMessage() {
+      document.getElementById('message').innerText = '';
+    }
+
+    function getFormData() {
+      return {
+        refNo: document.getElementById('refNo').value.trim(),
+        officeOrigin: document.getElementById('officeOrigin').value.trim(),
+        officeDestination: document.getElementById('officeDestination').value.trim(),
+        dateFiled: document.getElementById('dateFiled').value.trim(),
+        subject: document.getElementById('subject').value.trim(),
+        signatory: document.getElementById('signatory').value.trim(),
+        recordedBy: document.getElementById('recordedBy').value.trim()
+      };
+    }
+
+    function validateFields(formData) {
+      for (const key in formData) {
+        if (!formData[key]) {
+          document.getElementById('message').innerText = "Field '" + key + "' cannot be empty.";
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function enableActions() {
+      document.getElementById('modifyBtn').disabled = false;
+      document.getElementById('deleteBtn').disabled = false;
+    }
+
+    function disableActions() {
+      document.getElementById('modifyBtn').disabled = true;
+      document.getElementById('deleteBtn').disabled = true;
+    }
+
+    function clearFormFields() {
+      document.getElementById('refNo').value = '';
+      document.getElementById('officeOrigin').value = '';
+      document.getElementById('officeDestination').value = '';
+      document.getElementById('dateFiled').value = '';
+      document.getElementById('subject').value = '';
+      document.getElementById('signatory').value = '';
+      document.getElementById('recordedBy').value = '';
+      disableActions();
+      clearMessage();
+    }
+
+    function submitForm() {
+      clearMessage();
+      const formData = getFormData();
+      if (!validateFields(formData)) return;
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          document.getElementById('message').innerText = response;
+          clearFormFields();
+        })
+        .withFailureHandler(function(error) {
+          document.getElementById('message').innerText = "Error: " + error.message;
+        })
+        .submitData(formData);
+    }
+
+    function searchRecord() {
+      clearMessage();
+      const refNo = document.getElementById('refNo').value.trim();
+
+      if (!refNo) {
+        document.getElementById('message').innerText = "Please enter a Reference Number.";
+        disableActions();
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.found) {
+            const record = result.record;
+            document.getElementById('officeOrigin').value = record.officeOrigin;
+            document.getElementById('officeDestination').value = record.officeDestination;
+            document.getElementById('dateFiled').value = record.dateFiled;
+            document.getElementById('subject').value = record.subject;
+            document.getElementById('signatory').value = record.signatory;
+            document.getElementById('recordedBy').value = record.recordedBy;
+            document.getElementById('message').innerText = "Record found and populated.";
+            enableActions();
+          } else {
+            document.getElementById('message').innerText = "No record found with Reference No. " + refNo + ".";
+            disableActions();
+          }
+        })
+        .withFailureHandler(function(error) {
+          document.getElementById('message').innerText = "Error: " + error.message;
+          disableActions();
+        })
+        .searchRecord(refNo);
+    }
+
+    function modifyRecord() {
+      clearMessage();
+      const formData = getFormData();
+      if (!validateFields(formData)) return;
+      if (!confirm("Are you sure you want to modify this record?")) return;
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          document.getElementById('message').innerText = "Record successfully modified.";
+          clearFormFields();
+        })
+        .withFailureHandler(function(error) {
+          document.getElementById('message').innerText = "Error: " + error.message;
+        })
+        .modifyRecord(formData);
+    }
+
+    function deleteRecord() {
+      clearMessage();
+      const refNo = document.getElementById('refNo').value.trim();
+      if (!refNo) {
+        document.getElementById('message').innerText = "Reference Number is required to delete.";
+        return;
+      }
+
+      if (!confirm("Are you sure you want to delete this record?")) return;
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          document.getElementById('message').innerText = response;
+          clearFormFields();
+        })
+        .withFailureHandler(function(error) {
+          document.getElementById('message').innerText = "Error: " + error.message;
+        })
+        .deleteRecord(refNo);
+    }
+  </script>
+</head>
+<body onload="disableActions()">
+  <header class="main-header">
+    <div class="logo-container">
+      <img src="ISMD Logo.png" alt="ISMD Logo">
+    </div>
+    <h2>ISMD Document Registration</h2>
+  </header>
+  <form id="docForm" onsubmit="event.preventDefault();">
+    <label>Reference Number</label>
+    <input type="text" id="refNo" required>
+
+    <label>Office of Origin</label>
+    <input type="text" id="officeOrigin" required>
+
+    <label>Office of Destination</label>
+    <input type="text" id="officeDestination" required>
+
+    <label>Date Filed</label>
+    <input type="date" id="dateFiled" required>
+
+    <label>Subject</label>
+    <textarea id="subject" rows="4" required></textarea>
+
+    <label>Signatory</label>
+    <input type="text" id="signatory" required>
+
+    <label>Recorded By</label>
+    <input type="text" id="recordedBy" required>
+
+    <button type="button" onclick="submitForm()">Submit</button>
+    <button type="button" onclick="searchRecord()">Search</button>
+    <button type="button" id="modifyBtn" onclick="modifyRecord()">Modify</button>
+    <button type="button" id="deleteBtn" onclick="deleteRecord()">Delete</button>
+  </form>
+  <div id="message"></div>
+</body>
+</html>
